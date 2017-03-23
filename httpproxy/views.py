@@ -142,11 +142,12 @@ class HttpProxy(View):
 
     def post(self, request, *args, **kwargs):
         headers = {}
-        if isinstance(request.body, str):
-            request.body = request.body.decode('utf-8')
+        body = request.body
+        if isinstance(body, str):
+            body = body.decode('utf-8')
         if request.META.get('CONTENT_TYPE'):
             headers['Content-type'] = request.META.get('CONTENT_TYPE')
-        return self.get_response(body=request.body, headers=headers)
+        return self.get_response(body=body, headers=headers)
 
     def get_full_url(self, url):
         """
