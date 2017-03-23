@@ -162,7 +162,7 @@ class HttpProxy(View):
 
     def create_request(self, url, method, body=None, headers={}):
         request = requests.Request(method, url, body, headers)
-        logger.info('%s %s' % (request.method, request.url)
+        logger.info('%s %s' % (request.method, request.url))
         return request
 
     def get_response(self, method, body=None, headers={}):
