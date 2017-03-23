@@ -6,6 +6,8 @@ from django.http import HttpResponse
 from django.utils.six.moves import urllib
 from django.views.generic import View
 
+import requests
+
 from httpproxy.recorder import ProxyRecorder
 
 
@@ -138,7 +140,7 @@ class HttpProxy(View):
         return ProxyRecorder(domain=url.hostname, port=(url.port or 80))
 
     def get(self, *args, **kwargs):
-        return self.get_response()
+        return self.get_response(method='GET')
 
     def post(self, request, *args, **kwargs):
         headers = {}
@@ -147,7 +149,7 @@ class HttpProxy(View):
             body = body.decode('utf-8')
         if request.META.get('CONTENT_TYPE'):
             headers['Content-type'] = request.META.get('CONTENT_TYPE')
-        return self.get_response(body=body, headers=headers)
+        return self.get_response(body=request.body, headers=headers, method='POST)
 
     def get_full_url(self, url):
         """
@@ -158,24 +160,24 @@ class HttpProxy(View):
         request_url += '?%s' % param_str if param_str else ''
         return request_url
 
-    def create_request(self, url, body=None, headers={}):
-        request = urllib.request.Request(url, body, headers)
-        logger.info('%s %s' % (request.get_method(), request.get_full_url()))
+    def create_request(self, url, method, body=None, headers={}):
+        request = requests.Request(method, url, body, headers)
+        logger.info('%s %s' % (request.method, request.url)
         return request
 
-    def get_response(self, body=None, headers={}):
+    def get_response(self, method, body=None, headers={}):
         request_url = self.get_full_url(self.url)
         if isinstance(body, str):
             body = body.decode('utf-8')
         request = self.create_request(request_url, body=body, headers=headers)
-        response = urllib.request.urlopen(request)
-        try:
-            response_body = response.read()
-            status = response.getcode()
-            logger.debug(self._msg % response_body)
-        except urllib.error.HTTPError as e:
-            response_body = e.read()
-            logger.error(self._msg % response_body)
-            status = e.code
-        return HttpResponse(response_body, status=status,
+        session = requests.Session()
+        prepped = s.prepare_request(request)
+        response = session.send(prepped)
+        response_body = response.content
+        status = response.status_code
+        logger.debug(self._msg % response_body)
+        resp = HttpResponse(response_body, status=status,
                             content_type=response.headers['content-type'])
+        for key, value in headers:
+            resp[key] = value
+        return resp
