@@ -144,6 +144,9 @@ class HttpProxy(View):
 
     def post(self, request, *args, **kwargs):
         headers = {}
+        body = request.body
+        if isinstance(body, str):
+            body = body.decode('utf-8')
         if request.META.get('CONTENT_TYPE'):
             headers['Content-type'] = request.META.get('CONTENT_TYPE')
         return self.get_response(body=request.body, headers=headers, method='POST)
@@ -164,6 +167,8 @@ class HttpProxy(View):
 
     def get_response(self, method, body=None, headers={}):
         request_url = self.get_full_url(self.url)
+        if isinstance(body, str):
+            body = body.decode('utf-8')
         request = self.create_request(request_url, body=body, headers=headers)
         session = requests.Session()
         prepped = s.prepare_request(request)
