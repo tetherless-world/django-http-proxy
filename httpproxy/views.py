@@ -169,7 +169,7 @@ class HttpProxy(View):
         request_url = self.get_full_url(self.url)
         if isinstance(body, str):
             body = body.decode('utf-8')
-        request = self.create_request(request_url, body=body, headers=headers)
+        request = self.create_request(request_url, method, body=body, headers=headers)
         session = requests.Session()
         prepped = s.prepare_request(request)
         response = session.send(prepped)
