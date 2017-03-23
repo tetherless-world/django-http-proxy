@@ -162,6 +162,8 @@ class HttpProxy(View):
 
     def get_response(self, body=None, headers={}):
         request_url = self.get_full_url(self.url)
+        if hasattr(body, 'encode'):
+            body = body.encode('utf-8')
         request = self.create_request(request_url, body=body, headers=headers)
         response = urllib.request.urlopen(request)
         try:
