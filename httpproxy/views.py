@@ -144,7 +144,7 @@ class HttpProxy(View):
         headers = {}
         if request.META.get('CONTENT_TYPE'):
             headers['Content-type'] = request.META.get('CONTENT_TYPE')
-        return self.get_response(body=request.body.decode('utf-8').encode('utf-8'), headers=headers)
+        return self.get_response(body=request.body.decode('utf-8'), headers=headers)
 
     def get_full_url(self, url):
         """
@@ -163,7 +163,7 @@ class HttpProxy(View):
     def get_response(self, body=None, headers={}):
         request_url = self.get_full_url(self.url)
         if hasattr(body, 'decode'):
-            body = body.decode('utf-8').encode('utf-8')
+            body = body.decode('utf-8')
         request = self.create_request(request_url, body=body, headers=headers)
         response = urllib.request.urlopen(request)
         try:
