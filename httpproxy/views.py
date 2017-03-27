@@ -139,17 +139,28 @@ class HttpProxy(View):
         url = urllib.parse(self.base_url)
         return ProxyRecorder(domain=url.hostname, port=(url.port or 80))
 
-    def get(self, *args, **kwargs):
-        return self.get_response(method='GET')
+    def get_headers(self, request):
+        important_headers = [
+            'Accept',
+            'Accept-Encoding',
+            'Accept-Language',
+            'Cache-Control',
+            'Content-Type'
+        ]
+        regex = re.compile('^HTTP_')
+        return dict((header, request.META['HTTP_'+header.upper().replace('-','_')]) for header in important_headers if 'HTTP_'+header.upper().replace('-','_') in request.META)
+
+    def get(self, request, *args, **kwargs):
+        return self.get_response(method='GET',headers = self.get_headers(request))
 
     def post(self, request, *args, **kwargs):
-        headers = {}
+        headers = self.get_headers(request)
         body = request.body
         if isinstance(body, str):
             body = body.decode('utf-8')
         if request.META.get('CONTENT_TYPE'):
             headers['Content-type'] = request.META.get('CONTENT_TYPE')
-        return self.get_response(body=request.body, headers=headers, method='POST')
+        return self.get_response('POST', body=request.body, headers=headers)
 
     def get_full_url(self, url):
         """
@@ -167,17 +178,17 @@ class HttpProxy(View):
 
     def get_response(self, method, body=None, headers={}):
         request_url = self.get_full_url(self.url)
-        if isinstance(body, str):
-            body = body.decode('utf-8')
-        request = self.create_request(request_url, method, body=body, headers=headers)
+        request = requests.Request(method, request_url, data=body, headers=headers)
+        logger.info(method + ' ' + request_url + ' ' + str(headers))
         session = requests.Session()
-        prepped = s.prepare_request(request)
+        prepped = session.prepare_request(request)
         response = session.send(prepped)
         response_body = response.content
         status = response.status_code
         logger.debug(self._msg % response_body)
         resp = HttpResponse(response_body, status=status,
                             content_type=response.headers['content-type'])
-        for key, value in headers:
-            resp[key] = value
+        resp['Access-Control-Allow-Origin'] = '*'
+        #for key, value in response.headers.items():
+        #    resp[key] = value
         return resp
